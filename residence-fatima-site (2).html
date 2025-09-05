@@ -1,0 +1,1966 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résidence Fatima - Appartements de Standing à Dakar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #0066CC;
+            --light-blue: #4A90E2;
+            --sky-blue: #87CEEB;
+            --white: #FFFFFF;
+            --light-gray: #F8F9FA;
+            --text-dark: #2C3E50;
+            --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #4A90E2 50%, #87CEEB 100%);
+            --gradient-blue: linear-gradient(135deg, #0066CC 0%, #4A90E2 50%, #87CEEB 100%);
+            --gradient-light: linear-gradient(135deg, #FFFFFF 0%, #E6F2FF 100%);
+            --shadow-soft: 0 10px 40px rgba(0, 102, 204, 0.1);
+            --shadow-hover: 0 20px 60px rgba(0, 102, 204, 0.2);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            background: #FFFFFF;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Loader */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .loader-logo {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            animation: pulse 2s infinite;
+            letter-spacing: -2px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1rem 5%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transition: all 0.3s;
+            box-shadow: 0 2px 20px rgba(0, 102, 204, 0.1);
+        }
+
+        nav.scrolled {
+            padding: 0.5rem 5%;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 10px 30px rgba(0, 102, 204, 0.15);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: all 0.3s;
+            position: relative;
+            padding: 0.5rem 0;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-blue);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Enhanced Contact Button */
+        .contact-btn-nav {
+            background: var(--gradient-blue);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-btn-nav::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .contact-btn-nav:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .contact-btn-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 102, 204, 0.4);
+        }
+
+        .contact-btn-nav i {
+            animation: ring 2s infinite;
+        }
+
+        @keyframes ring {
+            0%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(-10deg); }
+            20%, 40% { transform: rotate(10deg); }
+        }
+
+        /* Hero Section */
+        #hero {
+            min-height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gradient-light);
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1920&h=1080&fit=crop');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+            filter: blur(3px);
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 1;
+            padding: 0 2rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero-image {
+            position: absolute;
+            right: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45%;
+            max-width: 600px;
+            z-index: 0;
+            opacity: 0.9;
+        }
+
+        .hero-image img {
+            width: 100%;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0, 102, 204, 0.2);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-title {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            margin-bottom: 1rem;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            letter-spacing: -2px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            color: var(--text-dark);
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-button {
+            background: var(--gradient-blue);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 102, 204, 0.4);
+        }
+
+        /* 3D Model Section */
+        #model-3d {
+            padding: 5rem 5%;
+            background: var(--gradient-light);
+            position: relative;
+        }
+
+        .model-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .model-iframe {
+            width: 100%;
+            height: 700px;
+            border: none;
+        }
+
+        /* Building Showcase */
+        .building-showcase {
+            padding: 5rem 5%;
+            background: white;
+            position: relative;
+        }
+
+        .showcase-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .showcase-image {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+            background-image: url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop');
+            background-size: cover;
+            background-position: center;
+            height: 500px;
+        }
+
+        .showcase-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .showcase-content p {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        /* Apartments Grid */
+        #apartments {
+            padding: 5rem 5%;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            opacity: 0.7;
+            margin-bottom: 3rem;
+            font-weight: 400;
+        }
+
+        .apartments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .apartment-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s;
+            position: relative;
+            cursor: pointer;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(0, 102, 204, 0.1);
+        }
+
+        .apartment-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .apartment-card.reserved {
+            opacity: 0.7;
+        }
+
+        .apartment-card.reserved::after {
+            content: 'RÉSERVÉ';
+            position: absolute;
+            top: 20px;
+            right: -30px;
+            background: linear-gradient(45deg, #e74c3c, #ff6b6b);
+            color: white;
+            padding: 5px 40px;
+            transform: rotate(45deg);
+            font-weight: bold;
+            z-index: 1;
+            font-size: 0.8rem;
+        }
+
+        .apartment-image {
+            height: 250px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .apartment-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+        }
+
+        .floor-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            font-size: 0.85rem;
+        }
+
+        .apartment-info {
+            padding: 1.5rem;
+            background: white;
+        }
+
+        .apartment-title {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .apartment-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .detail-item i {
+            color: var(--light-blue);
+        }
+
+        .apartment-price {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 1rem 0;
+        }
+
+        .view-details-btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--gradient-blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .view-details-btn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
+        }
+
+        .view-details-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            color: #999;
+        }
+
+        /* Apartment Details Modal */
+        .apartment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .apartment-modal.active {
+            display: flex;
+        }
+
+        .modal-content-apartment {
+            background: white;
+            border-radius: 20px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            position: relative;
+            height: 300px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        }
+
+        .modal-header-info {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            color: white;
+            z-index: 1;
+        }
+
+        .modal-header-info h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-header-info p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 2;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .close-modal-btn:hover {
+            transform: rotate(90deg);
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .modal-feature {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--light-gray);
+            border-radius: 10px;
+        }
+
+        .modal-feature i {
+            font-size: 1.5rem;
+            color: var(--primary-blue);
+        }
+
+        .modal-feature-text h4 {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 0.2rem;
+        }
+
+        .modal-feature-text p {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .modal-description {
+            margin-bottom: 2rem;
+        }
+
+        .modal-description h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .modal-description p {
+            line-height: 1.8;
+            color: var(--text-dark);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            padding: 2rem;
+            background: var(--light-gray);
+            border-radius: 0 0 20px 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn-reserve {
+            background: var(--gradient-blue);
+            color: white;
+        }
+
+        .btn-reserve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 102, 204, 0.3);
+        }
+
+        .btn-visit {
+            background: white;
+            color: var(--primary-blue);
+            border: 2px solid var(--primary-blue);
+        }
+
+        .btn-visit:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        /* Features */
+        #features {
+            padding: 5rem 5%;
+            background: var(--gradient-light);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 3rem auto;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 20px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            background: var(--gradient-blue);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .feature-description {
+            color: var(--text-dark);
+            opacity: 0.8;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Map Section */
+        #location {
+            padding: 5rem 5%;
+            background: white;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-hover);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Gallery Section */
+        .gallery-section {
+            padding: 5rem 5%;
+            background: var(--gradient-light);
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            height: 300px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            padding: 1.5rem;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+        }
+
+        .gallery-item:hover .gallery-overlay {
+            transform: translateY(0);
+        }
+
+        /* Contact Form */
+        #contact {
+            padding: 5rem 5%;
+            background: white;
+        }
+
+        .contact-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-hover);
+            border: 1px solid rgba(0, 102, 204, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--primary-blue);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            background: var(--light-gray);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            color: var(--text-dark);
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--light-blue);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Stats Counter */
+        .stats-section {
+            padding: 4rem 5%;
+            background: var(--gradient-blue);
+            color: white;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .stat-item {
+            padding: 2rem;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--gradient-blue);
+            color: white;
+            padding: 3rem 5% 1rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .footer-section p,
+        .footer-section a {
+            color: white;
+            text-decoration: none;
+            line-height: 1.8;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .footer-section a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .social-links a:hover {
+            background: white;
+            color: var(--primary-blue);
+            transform: translateY(-5px);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--primary-blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .nav-links.active {
+                display: flex;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: white;
+                flex-direction: column;
+                padding: 2rem;
+                gap: 1rem;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .apartments-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .showcase-container {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-image {
+                display: none;
+            }
+
+            .model-iframe {
+                height: 400px;
+            }
+
+            .modal-features {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Floating WhatsApp Button */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #25d366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(37, 211, 102, 0.4);
+        }
+
+        /* Virtual Tour Button */
+        .virtual-tour-btn {
+            background: white;
+            color: var(--primary-blue);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            font-weight: 600;
+            border: 2px solid var(--primary-blue);
+        }
+
+        .virtual-tour-btn:hover {
+            background: var(--primary-blue);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 102, 204, 0.3);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--gradient-blue);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 3000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-logo">RÉSIDENCE FATIMA</div>
+            <p style="color: white; margin-top: 1rem;">Chargement en cours...</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <div class="logo">RÉSIDENCE FATIMA</div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#hero">Accueil</a></li>
+                <li><a href="#model-3d">Visite 3D</a></li>
+                <li><a href="#apartments">Appartements</a></li>
+                <li><a href="#features">Caractéristiques</a></li>
+                <li><a href="#gallery">Galerie</a></li>
+                <li><a href="#location">Localisation</a></li>
+                <li><a href="#contact" class="contact-btn-nav"><i class="fas fa-phone"></i> Contact</a></li>
+            </ul>
+            <div class="mobile-menu-toggle" id="mobileMenu">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+            <h1 class="hero-title">RÉSIDENCE FATIMA</h1>
+            <p class="hero-subtitle">Luxe, Confort et Modernité au Cœur de Dakar</p>
+            <div class="hero-buttons">
+                <a href="#apartments" class="cta-button">Découvrir les Appartements</a>
+                <a href="#model-3d" class="virtual-tour-btn">
+                    <i class="fas fa-vr-cardboard"></i> Visite Virtuelle 3D
+                </a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&h=800&fit=crop" alt="Résidence Fatima">
+        </div>
+    </section>
+
+    <!-- 3D Model Section -->
+    <section id="model-3d">
+        <h2 class="section-title">Visite Virtuelle 3D Interactive</h2>
+        <p class="section-subtitle">Explorez la Résidence Fatima en 3D - Cliquez sur chaque étage pour une visite détaillée</p>
+        <div class="model-container">
+            <iframe class="model-iframe" src="data:text/html;charset=utf-8,%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3Ctitle%3EMaquette%203D%3C/title%3E%3C/head%3E%3Cbody%20style='margin:0;overflow:hidden'%3E%3Cdiv%20style='width:100%25;height:100vh;background:linear-gradient(135deg,%2387CEEB%200%25,%2398D8E8%2050%25,%23FFF9E6%20100%25);display:flex;align-items:center;justify-content:center;font-family:sans-serif'%3E%3Cdiv%20style='text-align:center'%3E%3Ch2%20style='color:%236B46C1;font-size:2rem'%3EMaquette%203D%20R%C3%A9sidence%20Fatima%3C/h2%3E%3Cp%20style='color:%23666;margin:20px%200'%3EVisualisez%20notre%20immeuble%20de%208%20%C3%A9tages%20avec%2015%20appartements%20de%20luxe%3C/p%3E%3Cbutton%20style='background:linear-gradient(135deg,%236B46C1,%239333EA);color:white;border:none;padding:15px%2030px;border-radius:25px;font-size:16px;cursor:pointer'%20onclick='alert(%22Chargement%20de%20la%20maquette%203D...%22)'%3ELancer%20la%20visite%203D%3C/button%3E%3C/div%3E%3C/div%3E%3C/body%3E%3C/html%3E"></iframe>
+        </div>
+    </section>
+
+    <!-- Building Showcase -->
+    <section class="building-showcase">
+        <div class="showcase-container">
+            <div class="showcase-image"></div>
+            <div class="showcase-content">
+                <h2>Une Architecture Moderne et Élégante</h2>
+                <p>La Résidence Fatima représente le summum du luxe résidentiel à Dakar. Avec ses lignes épurées et son design contemporain, notre immeuble de 8 étages offre une expérience de vie exceptionnelle.</p>
+                <p>Chaque détail a été pensé pour votre confort : des matériaux nobles, des finitions haut de gamme et des espaces généreux baignés de lumière naturelle.</p>
+                <a href="#apartments" class="cta-button">Explorer les Appartements</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number" data-target="15">0</div>
+                <div class="stat-label">Appartements de Luxe</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="8">0</div>
+                <div class="stat-label">Étages</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="140">0</div>
+                <div class="stat-label">m² par F4</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="291">0</div>
+                <div class="stat-label">m² Penthouse</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Apartments Section -->
+    <section id="apartments">
+        <h2 class="section-title">Nos Appartements</h2>
+        <p class="section-subtitle">Découvrez nos espaces de vie exceptionnels</p>
+        <div class="apartments-grid" id="apartmentsGrid">
+            <!-- Apartments will be dynamically loaded here -->
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <h2 class="section-title">Caractéristiques Premium</h2>
+        <p class="section-subtitle">Tout pour votre confort et votre sécurité</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3 class="feature-title">Sécurité 24/7</h3>
+                <p class="feature-description">Système de surveillance moderne et gardiennage permanent</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-parking"></i></div>
+                <h3 class="feature-title">Parking Privé</h3>
+                <p class="feature-description">Places de parking sécurisées pour tous les résidents</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-leaf"></i></div>
+                <h3 class="feature-title">Espaces Verts</h3>
+                <p class="feature-description">Jardins aménagés et terrasses végétalisées</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-elevator"></i></div>
+                <h3 class="feature-title">Ascenseur Moderne</h3>
+                <p class="feature-description">Accès facile à tous les étages</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-solar-panel"></i></div>
+                <h3 class="feature-title">Énergie Solaire</h3>
+                <p class="feature-description">Installation solaire pour les parties communes</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-wifi"></i></div>
+                <h3 class="feature-title">Fibre Optique</h3>
+                <p class="feature-description">Internet très haut débit dans chaque appartement</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery-section">
+        <h2 class="section-title">Galerie Photos</h2>
+        <p class="section-subtitle">Découvrez nos espaces en images</p>
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop" alt="Salon">
+                <div class="gallery-overlay">
+                    <h3>Salon Spacieux</h3>
+                    <p>Design moderne avec vue panoramique</p>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop" alt="Cuisine">
+                <div class="gallery-overlay">
+                    <h3>Cuisine Équipée</h3>
+                    <p>Électroménager haut de gamme inclus</p>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1540518614846-7eded433c457?w=400&h=300&fit=crop" alt="Chambre">
+                <div class="gallery-overlay">
+                    <h3>Chambre Principale</h3>
+                    <p>Espace repos avec dressing intégré</p>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=400&h=300&fit=crop" alt="Salle de bain">
+                <div class="gallery-overlay">
+                    <h3>Salle de Bain</h3>
+                    <p>Finitions luxueuses et modernes</p>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop" alt="Terrasse">
+                <div class="gallery-overlay">
+                    <h3>Terrasse Privée</h3>
+                    <p>Espace extérieur aménagé</p>
+                </div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=300&fit=crop" alt="Vue extérieure">
+                <div class="gallery-overlay">
+                    <h3>Vue Extérieure</h3>
+                    <p>Architecture contemporaine élégante</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location Section -->
+    <section id="location">
+        <h2 class="section-title">Localisation Stratégique</h2>
+        <p class="section-subtitle">Au cœur de Dakar, proche de toutes commodités</p>
+        <div id="map"></div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+        <h2 class="section-title">Réservez Votre Visite</h2>
+        <p class="section-subtitle">Notre équipe est à votre disposition</p>
+        <div class="contact-container">
+            <form id="contactForm" onsubmit="handleSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Prénom</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Nom</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Téléphone</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="apartmentType">Type d'Appartement Souhaité</label>
+                    <select id="apartmentType" name="apartmentType" required>
+                        <option value="">Sélectionnez un type</option>
+                        <option value="F4">F4 - 140m²</option>
+                        <option value="Penthouse">Penthouse - 291m²</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="visitDate">Date de Visite Souhaitée</label>
+                    <input type="date" id="visitDate" name="visitDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message (Optionnel)</label>
+                    <textarea id="message" name="message" rows="4" placeholder="Avez-vous des questions particulières ?"></textarea>
+                </div>
+                <button type="submit" class="cta-button" style="width: 100%; padding: 1rem; font-size: 1rem;">
+                    <i class="fas fa-calendar-check"></i> Réserver Ma Visite
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>RÉSIDENCE FATIMA</h3>
+                <p>Un projet immobilier d'exception qui redéfinit le luxe résidentiel à Dakar.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p><i class="fas fa-phone"></i> +221 77 123 45 67</p>
+                <p><i class="fas fa-envelope"></i> contact@residencefatima.sn</p>
+                <p><i class="fas fa-map-marker-alt"></i> Dakar, Sénégal</p>
+            </div>
+            <div class="footer-section">
+                <h3>Horaires de Visite</h3>
+                <p>Lundi - Vendredi: 9h - 18h</p>
+                <p>Samedi: 10h - 16h</p>
+                <p>Dimanche: Sur rendez-vous</p>
+            </div>
+        </div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); margin-top: 2rem; padding-top: 2rem;">
+            <p>&copy; 2024 Résidence Fatima. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <!-- WhatsApp Float Button -->
+    <div class="whatsapp-float" onclick="openWhatsApp()">
+        <i class="fab fa-whatsapp"></i>
+    </div>
+
+    <!-- Apartment Details Modal -->
+    <div class="apartment-modal" id="apartmentModal">
+        <div class="modal-content-apartment">
+            <div class="modal-header" id="modalHeader">
+                <button class="close-modal-btn" onclick="closeApartmentModal()">&times;</button>
+                <div class="modal-header-info">
+                    <h2 id="modalTitle">Appartement</h2>
+                    <p id="modalSubtitle">Description</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="modal-features" id="modalFeatures">
+                    <!-- Features will be loaded here -->
+                </div>
+                <div class="modal-description">
+                    <h3>Description Détaillée</h3>
+                    <p id="modalDescription">
+                        <!-- Description will be loaded here -->
+                    </p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-reserve" onclick="reserveApartment()">
+                    <i class="fas fa-check-circle"></i> Réserver cet Appartement
+                </button>
+                <button class="btn-visit" onclick="scheduleVisit()">
+                    <i class="fas fa-calendar"></i> Planifier une Visite
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Apartment images - real interior photos
+        const apartmentImages = [
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop', // Living room
+            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop', // Apartment interior
+            'https://images.unsplash.com/photo-1558442074-3c19857bc1dc?w=600&h=400&fit=crop', // Modern apartment
+            'https://images.unsplash.com/photo-1567496898669-ee935f5f647a?w=600&h=400&fit=crop', // Bedroom
+            'https://images.unsplash.com/photo-1565182999561-18d7dc61c393?w=600&h=400&fit=crop', // Kitchen
+            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&h=400&fit=crop', // Living space
+            'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=600&h=400&fit=crop', // Bedroom 2
+            'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&h=400&fit=crop'  // Apartment view
+        ];
+
+        const penthouseImage = 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop';
+
+        // Apartments Data with detailed information
+        const apartments = [
+            { 
+                id: 1, 
+                name: "A1", 
+                type: "F4", 
+                floor: "1er étage", 
+                surface: 140, 
+                price: "140.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue jardin",
+                description: "Magnifique appartement F4 au 1er étage avec vue sur le jardin. Spacieux et lumineux, il offre un cadre de vie idéal pour une famille."
+            },
+            { 
+                id: 2, 
+                name: "A2", 
+                type: "F4", 
+                floor: "1er étage", 
+                surface: 140, 
+                price: "140.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue jardin",
+                description: "Appartement F4 avec de beaux volumes et une excellente disposition. Finitions haut de gamme et luminosité exceptionnelle."
+            },
+            { 
+                id: 3, 
+                name: "B1", 
+                type: "F4", 
+                floor: "2e étage", 
+                surface: 140, 
+                price: "145.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue dégagée",
+                description: "Superbe F4 au 2ème étage offrant une vue dégagée. Agencement optimal et prestations de qualité."
+            },
+            { 
+                id: 4, 
+                name: "B2", 
+                type: "F4", 
+                floor: "2e étage", 
+                surface: 140, 
+                price: "145.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue dégagée",
+                description: "Appartement F4 lumineux avec terrasse spacieuse. Idéalement agencé pour le confort de toute la famille."
+            },
+            { 
+                id: 5, 
+                name: "C1", 
+                type: "F4", 
+                floor: "3e étage", 
+                surface: 140, 
+                price: "150.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue panoramique",
+                description: "Appartement F4 avec vue panoramique exceptionnelle. Espaces de vie généreux et finitions soignées."
+            },
+            { 
+                id: 6, 
+                name: "C2", 
+                type: "F4", 
+                floor: "3e étage", 
+                surface: 140, 
+                price: "150.000.000", 
+                status: "reserved",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue panoramique",
+                description: "F4 d'exception déjà réservé. Position privilégiée dans la résidence."
+            },
+            { 
+                id: 7, 
+                name: "D1", 
+                type: "F4", 
+                floor: "4e étage", 
+                surface: 140, 
+                price: "155.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "20m²",
+                view: "Vue mer partielle",
+                description: "Splendide F4 avec balcon XXL et vue mer partielle. Un bien rare alliant confort et prestige."
+            },
+            { 
+                id: 8, 
+                name: "D2", 
+                type: "F4", 
+                floor: "4e étage", 
+                surface: 140, 
+                price: "155.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "20m²",
+                view: "Vue mer partielle",
+                description: "Appartement F4 avec grande terrasse et vue exceptionnelle. Prestations haut de gamme."
+            },
+            { 
+                id: 9, 
+                name: "E1", 
+                type: "F4", 
+                floor: "5e étage", 
+                surface: 140, 
+                price: "160.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue panoramique",
+                description: "F4 lumineux au 5ème étage avec vue imprenable. Calme et standing assurés."
+            },
+            { 
+                id: 10, 
+                name: "E2", 
+                type: "F4", 
+                floor: "5e étage", 
+                surface: 140, 
+                price: "160.000.000", 
+                status: "reserved",
+                rooms: 4,
+                bathrooms: 2,
+                balcony: "15m²",
+                view: "Vue panoramique",
+                description: "Appartement F4 réservé offrant une vue spectaculaire sur la ville."
+            },
+            { 
+                id: 11, 
+                name: "F1", 
+                type: "F4", 
+                floor: "6e étage", 
+                surface: 140, 
+                price: "165.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 3,
+                balcony: "18m²",
+                view: "Vue panoramique 180°",
+                description: "Magnifique F4 au 6ème étage avec vue panoramique à 180°. Prestations luxueuses."
+            },
+            { 
+                id: 12, 
+                name: "F2", 
+                type: "F4", 
+                floor: "6e étage", 
+                surface: 140, 
+                price: "165.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 3,
+                balcony: "18m²",
+                view: "Vue panoramique 180°",
+                description: "Appartement F4 d'exception avec triple exposition. Luminosité et confort maximum."
+            },
+            { 
+                id: 13, 
+                name: "G1", 
+                type: "F4", 
+                floor: "7e étage", 
+                surface: 140, 
+                price: "170.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 3,
+                balcony: "20m²",
+                view: "Vue mer et ville",
+                description: "F4 de prestige au 7ème étage. Vue mer et ville, finitions luxueuses, emplacement privilégié."
+            },
+            { 
+                id: 14, 
+                name: "G2", 
+                type: "F4", 
+                floor: "7e étage", 
+                surface: 140, 
+                price: "170.000.000", 
+                status: "available",
+                rooms: 4,
+                bathrooms: 3,
+                balcony: "20m²",
+                view: "Vue mer et ville",
+                description: "Appartement F4 de standing avec vue exceptionnelle. Le summum du luxe résidentiel."
+            },
+            { 
+                id: 15, 
+                name: "Penthouse", 
+                type: "Duplex Luxe", 
+                floor: "8e étage", 
+                surface: 291, 
+                price: "350.000.000", 
+                status: "reserved",
+                rooms: 6,
+                bathrooms: 4,
+                balcony: "80m²",
+                view: "Vue panoramique 360°",
+                description: "Penthouse duplex exceptionnel avec terrasse panoramique de 80m². Vue à 360° sur Dakar, finitions ultra-luxe, espaces de réception grandioses."
+            }
+        ];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loader
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                document.getElementById('loader').style.visibility = 'hidden';
+            }, 1500);
+
+            // Load apartments
+            loadApartments();
+
+            // Initialize map
+            initMap();
+
+            // Animate stats
+            animateStats();
+
+            // Mobile menu
+            document.getElementById('mobileMenu').addEventListener('click', function() {
+                document.getElementById('navLinks').classList.toggle('active');
+            });
+
+            // Smooth scroll
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Close mobile menu if open
+                        document.getElementById('navLinks').classList.remove('active');
+                    }
+                });
+            });
+
+            // Navbar scroll effect
+            window.addEventListener('scroll', function() {
+                const navbar = document.getElementById('navbar');
+                if (window.scrollY > 100) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // Set minimum date for visit
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('visitDate').setAttribute('min', today);
+        });
+
+        // Load apartments with real apartment images
+        function loadApartments() {
+            const grid = document.getElementById('apartmentsGrid');
+            grid.innerHTML = '';
+
+            apartments.forEach((apt, index) => {
+                const card = document.createElement('div');
+                card.className = `apartment-card ${apt.status === 'reserved' ? 'reserved' : ''}`;
+                
+                // Use penthouse image for penthouse, otherwise use apartment images
+                const imageUrl = apt.type === 'Duplex Luxe' ? penthouseImage : apartmentImages[index % apartmentImages.length];
+                
+                card.innerHTML = `
+                    <div class="apartment-image" style="background-image: url('${imageUrl}');">
+                        <div class="floor-badge">${apt.floor}</div>
+                    </div>
+                    <div class="apartment-info">
+                        <h3 class="apartment-title">Appartement ${apt.name}</h3>
+                        <div class="apartment-details">
+                            <div class="detail-item">
+                                <i class="fas fa-home"></i>
+                                <span>${apt.type}</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-ruler-combined"></i>
+                                <span>${apt.surface} m²</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-bed"></i>
+                                <span>${apt.rooms} pièces</span>
+                            </div>
+                        </div>
+                        <div class="apartment-price">${apt.price} FCFA</div>
+                        <button class="view-details-btn" ${apt.status === 'reserved' ? 'disabled' : ''} 
+                                onclick="openApartmentModal(${apt.id})">
+                            ${apt.status === 'reserved' ? 'Réservé' : 'Voir les Détails'}
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Open apartment modal with details
+        function openApartmentModal(apartmentId) {
+            const apt = apartments.find(a => a.id === apartmentId);
+            if (!apt) return;
+
+            const modal = document.getElementById('apartmentModal');
+            const imageUrl = apt.type === 'Duplex Luxe' ? penthouseImage : apartmentImages[(apartmentId - 1) % apartmentImages.length];
+
+            // Set modal header
+            document.getElementById('modalHeader').style.backgroundImage = `url('${imageUrl}')`;
+            document.getElementById('modalTitle').textContent = `${apt.type} - ${apt.name}`;
+            document.getElementById('modalSubtitle').textContent = `${apt.floor} • ${apt.surface} m²`;
+
+            // Set features
+            const featuresHTML = `
+                <div class="modal-feature">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                    <div class="modal-feature-text">
+                        <h4>Surface</h4>
+                        <p>${apt.surface} m²</p>
+                    </div>
+                </div>
+                <div class="modal-feature">
+                    <i class="fas fa-bed"></i>
+                    <div class="modal-feature-text">
+                        <h4>Chambres</h4>
+                        <p>${apt.rooms - 1} chambres</p>
+                    </div>
+                </div>
+                <div class="modal-feature">
+                    <i class="fas fa-bath"></i>
+                    <div class="modal-feature-text">
+                        <h4>Salles de bain</h4>
+                        <p>${apt.bathrooms}</p>
+                    </div>
+                </div>
+                <div class="modal-feature">
+                    <i class="fas fa-tree"></i>
+                    <div class="modal-feature-text">
+                        <h4>Terrasse</h4>
+                        <p>${apt.balcony}</p>
+                    </div>
+                </div>
+                <div class="modal-feature">
+                    <i class="fas fa-mountain"></i>
+                    <div class="modal-feature-text">
+                        <h4>Vue</h4>
+                        <p>${apt.view}</p>
+                    </div>
+                </div>
+                <div class="modal-feature">
+                    <i class="fas fa-tag"></i>
+                    <div class="modal-feature-text">
+                        <h4>Prix</h4>
+                        <p>${apt.price} FCFA</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modalFeatures').innerHTML = featuresHTML;
+
+            // Set description
+            document.getElementById('modalDescription').textContent = apt.description;
+
+            // Store current apartment ID for reservation
+            modal.dataset.apartmentId = apartmentId;
+
+            // Show modal
+            modal.classList.add('active');
+        }
+
+        // Close apartment modal
+        function closeApartmentModal() {
+            document.getElementById('apartmentModal').classList.remove('active');
+        }
+
+        // Reserve apartment
+        function reserveApartment() {
+            const modal = document.getElementById('apartmentModal');
+            const aptId = modal.dataset.apartmentId;
+            const apt = apartments.find(a => a.id == aptId);
+            
+            showToast(`Réservation confirmée pour l'appartement ${apt.name}! Un conseiller vous contactera sous peu.`);
+            closeApartmentModal();
+            
+            // Update apartment status
+            apt.status = 'reserved';
+            loadApartments();
+        }
+
+        // Schedule visit
+        function scheduleVisit() {
+            closeApartmentModal();
+            // Scroll to contact form
+            document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+            showToast('Remplissez le formulaire ci-dessous pour planifier votre visite');
+        }
+
+        // Initialize Map
+        function initMap() {
+            // Coordinates for Dakar
+            const map = L.map('map').setView([14.7167, -17.4677], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Custom marker
+            const customIcon = L.divIcon({
+                html: '<div style="background: linear-gradient(135deg, #0066CC, #4A90E2); width: 40px; height: 40px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center;"><i class="fas fa-building" style="transform: rotate(45deg); color: white;"></i></div>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
+
+            L.marker([14.7167, -17.4677], { icon: customIcon })
+                .addTo(map)
+                .bindPopup('<b>Résidence Fatima</b><br>Votre nouvelle adresse de prestige')
+                .openPopup();
+
+            // Add nearby points of interest
+            const poi = [
+                { coords: [14.7200, -17.4700], name: "Centre Commercial", icon: "shopping-cart" },
+                { coords: [14.7100, -17.4650], name: "École Internationale", icon: "graduation-cap" },
+                { coords: [14.7150, -17.4600], name: "Hôpital", icon: "hospital" },
+                { coords: [14.7250, -17.4750], name: "Parc", icon: "tree" }
+            ];
+
+            poi.forEach(point => {
+                const poiIcon = L.divIcon({
+                    html: `<div style="background: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);"><i class="fas fa-${point.icon}" style="color: #4A90E2;"></i></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                L.marker(point.coords, { icon: poiIcon })
+                    .addTo(map)
+                    .bindPopup(point.name);
+            });
+        }
+
+        // Animate Stats
+        function animateStats() {
+            const stats = document.querySelectorAll('.stat-number');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const target = parseInt(entry.target.getAttribute('data-target'));
+                        let current = 0;
+                        const increment = target / 50;
+                        const timer = setInterval(() => {
+                            current += increment;
+                            if (current >= target) {
+                                current = target;
+                                clearInterval(timer);
+                            }
+                            entry.target.textContent = Math.floor(current);
+                        }, 30);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            });
+
+            stats.forEach(stat => observer.observe(stat));
+        }
+
+        // Handle contact form submission
+        function handleSubmit(event) {
+            event.preventDefault();
+            showToast('Votre demande de visite a été envoyée avec succès! Nous vous contacterons dans les 24h.');
+            document.getElementById('contactForm').reset();
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        // Open WhatsApp
+        function openWhatsApp() {
+            const message = encodeURIComponent('Bonjour, je suis intéressé par les appartements de la Résidence Fatima.');
+            window.open(`https://wa.me/221771234567?text=${message}`, '_blank');
+        }
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const animateOnScroll = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 1s ease forwards';
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.feature-card, .apartment-card, .gallery-item').forEach(el => {
+                animateOnScroll.observe(el);
+            });
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('apartmentModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeApartmentModal();
+            }
+        });
+    </script>
+</body>
+</html>
